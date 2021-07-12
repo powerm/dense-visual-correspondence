@@ -1,18 +1,53 @@
+from __future__ import print_function
+
+import sys
 import os
 import time
 import yaml
 import numpy as np
 from yaml import CLoader
 import datetime
+import  modules.utils.transformations as transformations
 
-import transformations
-
+def getDenseCorrespondenceSourceDir():
+    return os.getenv("DC_SOURCE_DIR")
 
 def getSpartanSourceDir():
     return os.getenv("SPARTAN_SOURCE_DIR")
 
 def get_data_dir():
     return os.getenv("DATA_DIR")
+
+def getPdcPath():
+    """
+    For backwards compatibility
+    """
+    return get_data_dir()
+
+def get_defaults_config():
+    dc_source_dir = getDenseCorrespondenceSourceDir()
+    default_config_file = os.path.join(dc_source_dir, 'config', 'defaults.yaml')
+
+    return getDictFromYamlFilename(default_config_file)
+
+def set_cuda_visible_devices(gpu_list):
+    """
+    Sets CUDA_VISIBLE_DEVICES environment variable to only show certain gpus
+    If gpu_list is empty does nothing
+    :param gpu_list: list of gpus to set as visible
+    :return: None
+    """
+
+    if len(gpu_list) == 0:
+        print("using all CUDA gpus")
+        return
+
+    cuda_visible_devices = ""
+    for gpu in gpu_list:
+        cuda_visible_devices += str(gpu) + ","
+
+    print("setting CUDA_VISIBLE_DEVICES = ", cuda_visible_devices)
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
 
 def getQuaternionFromDict(d):
     quat = None
@@ -119,6 +154,89 @@ def homogenous_transform_from_dict(d):
     transform_matrix[0:3,3] = np.array(pos)
 
     return transform_matrix
+
+
+def convert_to_absolute_path(path):
+    """
+    Converts a potentially relative path to an absolute path by pre-pending the home directory
+    :param path: absolute or relative path
+    :type path: str
+    :return: absolute path
+    :rtype: str
+    """
+
+    if os.path.isdir(path):
+        return path
+
+
+    home_dir = os.path.expanduser("~")
+    return os.path.join(home_dir, path)
+
+def convert_data_relative_path_to_absolute_path(path, assert_path_exists=False):
+    """
+    Expands a path that is relative to the DC_DATA_DIR
+    returned by `get_data_dir()`.
+
+    If the path is already an absolute path then just return the path
+    :param path:
+    :type path:
+    :param assert_path_exists: if you know this path should exist, then try to resolve it using a backwards compatibility check
+    :return:
+    :rtype:
+    """
+
+    if os.path.isabs(path):
+        return path
+
+    full_path = os.path.join(get_data_dir(), path)
+
+    if assert_path_exists:
+        if not os.path.exists(full_path):
+            # try a backwards compatibility check for old style
+            # "code/data_volume/pdc/<path>" rather than <path>
+            start_path = "dataset/dense-net-entire/pdc"
+            rel_path = os.path.relpath(path, start_path)
+            full_path = os.path.join(get_data_dir(), rel_path)
+        
+        if not os.path.exists(full_path):
+            raise ValueError("full_path %s not found, you asserted that path exists" %(full_path))
+
+
+    return full_path
+
+class CameraIntrinsics(object):
+    """
+    Useful class for wrapping camera intrinsics and loading them from a
+    camera_info.yaml file
+    """
+    def __init__(self, cx, cy, fx, fy, width, height):
+        self.cx = cx
+        self.cy = cy
+        self.fx = fx
+        self.fy = fy
+        self.width = width
+        self.height = height
+
+        self.K = self.get_camera_matrix()
+
+    def get_camera_matrix(self):
+        return np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0,0,1]])
+
+    @staticmethod
+    def from_yaml_file(filename):
+        config = getDictFromYamlFilename(filename)
+
+        fx = config['camera_matrix']['data'][0]
+        cx = config['camera_matrix']['data'][2]
+
+        fy = config['camera_matrix']['data'][4]
+        cy = config['camera_matrix']['data'][5]
+
+        width = config['image_width']
+        height = config['image_height']
+
+        return CameraIntrinsics(cx, cy, fx, fy, width, height)
+
 
 
 if __name__ == '__main__':
