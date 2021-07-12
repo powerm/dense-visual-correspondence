@@ -587,7 +587,8 @@ class DenseCorrespondenceDataset(data.Dataset):
             self._data_load_type_probabilities.append(p)
 
         self._data_load_type_probabilities = np.array(self._data_load_type_probabilities)
-        self._data_load_type_probabilities /= np.sum(self._data_load_type_probabilities)
+        #self._data_load_type_probabilities /= np.sum(self._data_load_type_probabilities)
+        self._data_load_type_probabilities= self._data_load_type_probabilities / np.sum(self._data_load_type_probabilities)
 
     def set_train_mode(self):
         self.mode = "train"
