@@ -1,4 +1,4 @@
-from dense_correspondence_dataset_masked import DenseCorrespondenceDataset, ImageType
+from .dense_correspondence_dataset_masked import DenseCorrespondenceDataset, ImageType
 
 import os
 import numpy as np
@@ -13,14 +13,14 @@ import torch
 # pytorch-segmentation-detection repo. It is a fork of pytorch/vision
 from torchvision import transforms
 
-import dense_correspondence_manipulation.utils.utils as utils
-from dense_correspondence_manipulation.utils.utils import CameraIntrinsics
+import modules.utils.utils as utils
+from modules.utils.utils import CameraIntrinsics
 
 
-import dense_correspondence_manipulation.utils.constants as constants
+import modules.utils.constants as constants
 
 
-utils.add_dense_correspondence_to_python_path()
+#utils.add_dense_correspondence_to_python_path()
 import dense_correspondence.correspondence_tools.correspondence_finder as correspondence_finder
 import dense_correspondence.correspondence_tools.correspondence_augmentation as correspondence_augmentation
 
@@ -250,7 +250,9 @@ class SpartanDataset(DenseCorrespondenceDataset):
         if mode is None:
             mode = self.mode
 
-        for object_id, single_object_scene_dict in self._single_object_scene_dict.iteritems():
+        #for object_id, single_object_scene_dict in self._single_object_scene_dict.iteritems():
+        #  change from python2.x  dict.iteritems to python3.x  iter(dict.items())
+        for object_id, single_object_scene_dict in iter(self._single_object_scene_dict.items()):
             for scene_name in single_object_scene_dict[mode]:
                 yield scene_name
 
