@@ -7,6 +7,7 @@ import yaml
 import numpy as np
 from yaml import CLoader
 import datetime
+import random
 import  modules.utils.transformations as transformations
 
 def getDenseCorrespondenceSourceDir():
@@ -203,6 +204,16 @@ def convert_data_relative_path_to_absolute_path(path, assert_path_exists=False):
 
 
     return full_path
+
+def get_unique_string():
+    """
+    Returns a unique string based on current date and a random number
+    :return:
+    :rtype:
+    """
+
+    string = get_current_YYYY_MM_DD_hh_mm_ss() + "_" + str(random.randint(0,1000))
+    return string
 
 class CameraIntrinsics(object):
     """
