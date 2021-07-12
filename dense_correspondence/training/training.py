@@ -17,7 +17,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-#import tensorboard_logger
+import tensorboard_logger
 
 
 
