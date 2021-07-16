@@ -1,6 +1,9 @@
 import numpy as np
 import torch.nn as nn
-import torchvision.models as models
+#import torchvision.models as models
+import dense_correspondence.network.models as models
+#import models
+
 
 
 def adjust_input_image_size_for_proper_feature_alignment(input_img_batch, output_stride=8):
