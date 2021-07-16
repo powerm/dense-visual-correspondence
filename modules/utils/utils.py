@@ -215,6 +215,112 @@ def get_unique_string():
     string = get_current_YYYY_MM_DD_hh_mm_ss() + "_" + str(random.randint(0,1000))
     return string
 
+def getPaddedString(idx, width=6):
+    return str(idx).zfill(width)
+
+def compute_distance_between_poses(pose_a, pose_b):
+    """
+    Computes the linear difference between pose_a and pose_b
+    :param pose_a: 4 x 4 homogeneous transform
+    :type pose_a:
+    :param pose_b:
+    :type pose_b:
+    :return: Distance between translation component of the poses
+    :rtype:
+    """
+
+    pos_a = pose_a[0:3,3]
+    pos_b = pose_b[0:3,3]
+
+    return np.linalg.norm(pos_a - pos_b)
+
+def compute_angle_between_quaternions(q, r):
+    """
+    Computes the angle between two quaternions.
+
+    theta = arccos(2 * <q1, q2>^2 - 1)
+
+    See https://math.stackexchange.com/questions/90081/quaternion-distance
+    :param q: numpy array in form [w,x,y,z]. As long as both q,r are consistent it doesn't matter
+    :type q:
+    :param r:
+    :type r:
+    :return: angle between the quaternions, in radians
+    :rtype:
+    """
+
+    theta = 2*np.arccos(2 * np.dot(q,r)**2 - 1)
+    return theta
+
+def compute_angle_between_poses(pose_a, pose_b):
+    """
+    Computes the angle distance in radians between two homogenous transforms
+    :param pose_a: 4 x 4 homogeneous transform
+    :type pose_a:
+    :param pose_b:
+    :type pose_b:
+    :return: Angle between poses in radians
+    :rtype:
+    """
+
+    quat_a = transformations.quaternion_from_matrix(pose_a)
+    quat_b = transformations.quaternion_from_matrix(pose_b)
+
+    return compute_angle_between_quaternions(quat_a, quat_b)
+
+def get_model_param_file_from_directory(model_folder, iteration=None):
+    """
+    Gets the 003500.pth and 003500.pth.opt files from the specified folder
+
+    :param model_folder: location of the folder containing the param files 001000.pth. Can be absolute or relative path. If relative then it is relative to pdc/trained_models/
+    :type model_folder:
+    :param iteration: which index to use, e.g. 3500, if None it loads the latest one
+    :type iteration:
+    :return: model_param_file, optim_param_file, iteration
+    :rtype: str, str, int
+    """
+
+    if not os.path.isdir(model_folder):
+        pdc_path = getPdcPath()
+        model_folder = os.path.join(pdc_path, "trained_models", model_folder)
+
+    # find idx.pth and idx.pth.opt files
+    if iteration is None:
+        files = os.listdir(model_folder)
+        model_param_file = sorted(fnmatch.filter(files, '*.pth'))[-1]
+        iteration = int(model_param_file.split(".")[0])
+        optim_param_file = sorted(fnmatch.filter(files, '*.pth.opt'))[-1]
+    else:
+        prefix = getPaddedString(iteration, width=6)
+        model_param_file = prefix + ".pth"
+        optim_param_file = prefix + ".pth.opt"
+
+    model_param_file = os.path.join(model_folder, model_param_file)
+    optim_param_file = os.path.join(model_folder, optim_param_file)
+
+    return model_param_file, optim_param_file, iteration
+
+def flattened_pixel_locations_to_u_v(flat_pixel_locations, image_width):
+    """
+    :param flat_pixel_locations: A torch.LongTensor of shape torch.Shape([n,1]) where each element
+     is a flattened pixel index, i.e. some integer between 0 and 307,200 for a 640x480 image
+
+    :type flat_pixel_locations: torch.LongTensor
+
+    :return A tuple torch.LongTensor in (u,v) format
+    the pixel and the second column is the v coordinate
+
+    """
+    return (flat_pixel_locations%image_width, flat_pixel_locations/image_width)
+
+def uv_to_flattened_pixel_locations(uv_tuple, image_width):
+    """
+    Converts to a flat tensor
+    """
+    flat_pixel_locations = uv_tuple[1]*image_width + uv_tuple[0]
+    return flat_pixel_locations
+
+
 class CameraIntrinsics(object):
     """
     Useful class for wrapping camera intrinsics and loading them from a
