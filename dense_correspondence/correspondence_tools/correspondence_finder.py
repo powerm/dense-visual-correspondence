@@ -343,8 +343,8 @@ def create_non_correspondences(uv_b_matches, img_b_shape, num_non_matches_per_ma
     diffs_0 = copied_uv_b_matches_0 - uv_b_non_matches[0].type(dtype_float)
     diffs_1 = copied_uv_b_matches_1 - uv_b_non_matches[1].type(dtype_float)
 
-    diffs_0_flattened = diffs_0.view(-1,1)
-    diffs_1_flattened = diffs_1.view(-1,1)
+    diffs_0_flattened = diffs_0.contiguous().view(-1,1)
+    diffs_1_flattened = diffs_1.contiguous().view(-1,1)
 
     diffs_0_flattened = torch.abs(diffs_0_flattened).squeeze(1)
     diffs_1_flattened = torch.abs(diffs_1_flattened).squeeze(1)
@@ -467,8 +467,8 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
         uv_a_vec = (torch.ones(num_attempts).type(dtype_long)*uv_a[0],torch.ones(num_attempts).type(dtype_long)*uv_a[1])
         uv_a_vec_flattened = uv_a_vec[1]*image_width+uv_a_vec[0]
     else:
-        img_a_mask = torch.from_numpy(img_a_mask).type(dtype_float)  
-        
+        img_a_mask = torch.from_numpy(img_a_mask).type(dtype_float)
+
         # Option A: This next line samples from img mask
         uv_a_vec = random_sample_from_masked_image_torch(img_a_mask, num_samples=num_attempts)
         if uv_a_vec[0] is None:
@@ -482,6 +482,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
 
         # Always use this line        
         uv_a_vec_flattened = uv_a_vec[1]*image_width+uv_a_vec[0]
+        uv_a_vec_flattened_long= uv_a_vec_flattened.type(dtype_long)
 
 
     if K is None:
@@ -496,7 +497,8 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     img_a_depth_torch = img_a_depth_torch.view(-1,1)
 
     
-    depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened)*1.0/DEPTH_IM_SCALE
+    #depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened)*1.0/DEPTH_IM_SCALE
+    depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened_long)*1.0/DEPTH_IM_SCALE
     depth_vec = depth_vec.squeeze(1)
     
     # Prune based on
