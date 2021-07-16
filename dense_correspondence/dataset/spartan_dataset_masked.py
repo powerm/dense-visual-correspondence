@@ -417,8 +417,9 @@ class SpartanDataset(DenseCorrespondenceDataset):
         """
         pose_data = self.get_pose_data(scene_name)
         image_idxs = pose_data.keys() # list of integers
-        random.choice(image_idxs)
-        random_idx = random.choice(image_idxs)
+        #random.choice(image_idxs)
+        random.choice(list(image_idxs))
+        random_idx = random.choice(list(image_idxs))
         return random_idx
 
     def get_random_object_id(self):
@@ -428,7 +429,8 @@ class SpartanDataset(DenseCorrespondenceDataset):
         :rtype:
         """
         object_id_list = self._single_object_scene_dict.keys()
-        return random.choice(object_id_list)
+        #return random.choice(object_id_list)
+        return random.choice(list(object_id_list))
 
     def get_random_object_id_and_int(self):
         """
@@ -738,7 +740,8 @@ class SpartanDataset(DenseCorrespondenceDataset):
         matches_a_mask = SD.mask_image_from_uv_flat_tensor(matches_a, image_width, image_height)
         image_a_mask_torch = torch.from_numpy(np.asarray(image_a_mask)).long()
         mask_a_flat = image_a_mask_torch.view(-1,1).squeeze(1)
-        blind_non_matches_a = (mask_a_flat - matches_a_mask).nonzero()
+        #blind_non_matches_a = (mask_a_flat - matches_a_mask).nonzero()
+        blind_non_matches_a = torch.nonzero((mask_a_flat - matches_a_mask),as_tuple=False)
 
         no_blind_matches_found = False
         if len(blind_non_matches_a) == 0:
@@ -761,6 +764,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
                     no_blind_matches_found = True
                 else:
                     blind_non_matches_b = utils.uv_to_flattened_pixel_locations(blind_uv_b, image_width)
+                    blind_non_matches_b=blind_non_matches_b.type(torch.LongTensor)
 
                     if len(blind_non_matches_b) == 0:
                         no_blind_matches_found = True
