@@ -26,6 +26,26 @@ from modules.utils.constants import *
 dtype_float = torch.FloatTensor
 dtype_long = torch.LongTensor
 
+def flattened_pixel_locations_to_u_v(flat_pixel_locations, image_width):
+    """
+    :param flat_pixel_locations: A torch.LongTensor of shape torch.Shape([n,1]) where each element
+     is a flattened pixel index, i.e. some integer between 0 and 307,200 for a 640x480 image
+
+    :type flat_pixel_locations: torch.LongTensor
+
+    :return A tuple torch.LongTensor in (u,v) format
+    the pixel and the second column is the v coordinate
+
+    """
+    return (flat_pixel_locations%image_width, torch.floor(flat_pixel_locations/image_width).long())
+
+def uv_to_flattened_pixel_locations(uv_tuple, image_width):
+    """
+    Converts to a flat tensor
+    """
+    flat_pixel_locations = uv_tuple[1]*image_width + uv_tuple[0]
+    return flat_pixel_locations
+
 def pytorch_rand_select_pixel(width,height,num_samples=1):
     two_rand_numbers = torch.rand(2,num_samples)
     two_rand_numbers[0,:] = two_rand_numbers[0,:]*width
@@ -117,7 +137,8 @@ def random_sample_from_masked_image_torch(img_mask, num_samples):
     rand_numbers = torch.rand(num_samples)*len(mask_indices_flat)
     rand_indices = torch.floor(rand_numbers).long()
     uv_vec_flattened = torch.index_select(mask_indices_flat, 0, rand_indices).squeeze(1)
-    uv_vec = utils.flattened_pixel_locations_to_u_v(uv_vec_flattened, image_width)
+    
+    uv_vec = flattened_pixel_locations_to_u_v(uv_vec_flattened, image_width)
     return uv_vec
 
 def pinhole_projection_image_to_world(uv, z, K):
@@ -467,10 +488,12 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
         uv_a_vec = (torch.ones(num_attempts).type(dtype_long)*uv_a[0],torch.ones(num_attempts).type(dtype_long)*uv_a[1])
         uv_a_vec_flattened = uv_a_vec[1]*image_width+uv_a_vec[0]
     else:
-        img_a_mask = torch.from_numpy(img_a_mask).type(dtype_float)
+        #img_a_mask = torch.from_numpy(img_a_mask.copy()).type(dtype_float)
+        img_a_mask = torch.from_numpy(img_a_mask.copy())
 
         # Option A: This next line samples from img mask
         uv_a_vec = random_sample_from_masked_image_torch(img_a_mask, num_samples=num_attempts)
+        #uv_a_vec_flattened = random_sample_from_masked_image_torch(img_a_mask, num_samples=num_attempts)
         if uv_a_vec[0] is None:
             return (None, None)
         
@@ -480,9 +503,10 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
         # nonzero = (torch.nonzero(mask_a)).type(dtype_long)
         # uv_a_vec = (nonzero[:,1], nonzero[:,0])
 
-        # Always use this line        
-        uv_a_vec_flattened = uv_a_vec[1]*image_width+uv_a_vec[0]
-        uv_a_vec_flattened_long= uv_a_vec_flattened.type(dtype_long)
+        # Always use this line
+        #uv_a_vec_flattened = uv_a_vec        
+        uv_a_vec_flattened = uv_a_vec[1]*image_width + uv_a_vec[0]
+        #uv_a_vec_flattened_long= uv_a_vec_flattened.type(dtype_long)
 
 
     if K is None:
@@ -492,13 +516,13 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     body_to_rdf = get_body_to_rdf()
     rdf_to_body = inv(body_to_rdf)
 
-    img_a_depth_torch = torch.from_numpy(img_a_depth).type(dtype_float)
+    img_a_depth_torch = torch.from_numpy(img_a_depth.copy()).type(dtype_float)
     img_a_depth_torch = torch.squeeze(img_a_depth_torch, 0)
     img_a_depth_torch = img_a_depth_torch.view(-1,1)
-
+    
     
     #depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened)*1.0/DEPTH_IM_SCALE
-    depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened_long)*1.0/DEPTH_IM_SCALE
+    depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened)*1.0/DEPTH_IM_SCALE
     depth_vec = depth_vec.squeeze(1)
     
     # Prune based on
@@ -587,7 +611,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     # Prune based on
     # Case 3: the pixels in image b are occluded, OR there is no depth return in image b so we aren't sure
 
-    img_b_depth_torch = torch.from_numpy(img_b_depth).type(dtype_float)
+    img_b_depth_torch = torch.from_numpy(img_b_depth.copy()).type(dtype_float)
     img_b_depth_torch = torch.squeeze(img_b_depth_torch, 0)
     img_b_depth_torch = img_b_depth_torch.view(-1,1)
 
