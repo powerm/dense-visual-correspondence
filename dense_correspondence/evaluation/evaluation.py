@@ -192,7 +192,7 @@ class DenseCorrespondenceEvaluation(object):
         pose_a = dataset.get_pose_from_scene_name_and_idx(scene_name, img_a_idx)
         pos_a = pose_a[0:3, 3]
 
-        for i in xrange(0, max_num_attempts):
+        for i in range(0, max_num_attempts):
             img_b_idx = dataset.get_random_image_index(scene_name)
             pose_b = dataset.get_pose_from_scene_name_and_idx(scene_name, img_b_idx)
             pos_b = pose_b[0:3, 3]
@@ -310,7 +310,7 @@ class DenseCorrespondenceEvaluation(object):
         utils.reset_random_seed()
 
         pd_dataframe_list = []
-        for i in xrange(num_image_pairs):
+        for i in range(num_image_pairs):
 
             object_id_a, object_id_b = dataset.get_two_different_object_ids()
             scene_name_a = dataset.get_random_single_object_scene_name(object_id_a)
@@ -489,7 +489,7 @@ class DenseCorrespondenceEvaluation(object):
 
 
         pd_dataframe_list = []
-        for i in xrange(0, num_image_pairs):
+        for i in range(0, num_image_pairs):
 
 
             scene_name = dataset.get_random_scene_name()
@@ -602,8 +602,13 @@ class DenseCorrespondenceEvaluation(object):
 
     @staticmethod
     def clip_pixel_to_image_size_and_round(uv, image_width, image_height):
-        u = min(int(round(uv[0])), image_width - 1)
-        v = min(int(round(uv[1])), image_height - 1)
+        if isinstance(uv[0], torch.Tensor) and isinstance(uv[1], torch.Tensor):
+            u = min(int(torch.round(uv[0])), image_width - 1)
+            v = min(int(torch.round(uv[1])), image_height - 1)
+        elif isinstance(uv[0],float) and isinstance(uv[1],float):
+            u = min(int(round(uv[0])), image_width - 1)
+            v = min(int(round(uv[1])), image_height - 1)
+
         return (u,v)
 
     @staticmethod
@@ -1399,7 +1404,7 @@ class DenseCorrespondenceEvaluation(object):
             print ("Only normalizing pairs of images!")
             descriptor_image_stats = None
 
-        for i in xrange(0, num_matches):
+        for i in range(0, num_matches):
             # convert to (u,v) format
             pixel_a = [sampled_idx_list[1][i], sampled_idx_list[0][i]]
             best_match_uv, best_match_diff, norm_diffs =\
@@ -1854,7 +1859,7 @@ class DenseCorrespondenceEvaluation(object):
         evaluation_labeled_data_paths += dataset.config["multi_object"]["evaluation_labeled_data_path"]
         
         # add all of the single object lists
-        for object_key, val in dataset.config["single_object"].iteritems():
+        for object_key, val in iter(dataset.config["single_object"].items()):
             if "evaluation_labeled_data_path" in val:
                 evaluation_labeled_data_paths += val["evaluation_labeled_data_path"]
 
@@ -2267,7 +2272,7 @@ class DenseCorrespondenceEvaluation(object):
         stats['entire_image'] = {'mean': None, 'max': None, 'min': None}
         stats['mask_image'] = {'mean': None, 'max': None, 'min': None}
 
-        for i in xrange(0,num_images):
+        for i in range(0,num_images):
             rgb, depth, mask, _ = dataset.get_random_rgbd_mask_pose()
             img_tensor = dataset.rgb_image_to_tensor(rgb)
             res = dcn.forward_single_image_tensor(img_tensor)  # [H, W, D]
@@ -2286,7 +2291,7 @@ class DenseCorrespondenceEvaluation(object):
             update_stats(stats['mask_image'], mask_image_stats)
 
 
-        for key, val in stats.iteritems():
+        for key, val in iter(stats.items()):
             val['mean'] = 1.0/num_images * val['mean']
             for field in val:
                 val[field] = val[field].tolist()
