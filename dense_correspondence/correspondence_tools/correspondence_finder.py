@@ -124,7 +124,7 @@ def random_sample_from_masked_image_torch(img_mask, num_samples):
     image_height, image_width = img_mask.shape
 
     if isinstance(img_mask, np.ndarray):
-        img_mask_torch = torch.from_numpy(img_mask).float()
+        img_mask_torch = torch.from_numpy(img_mask.copy()).float()
     else:
         img_mask_torch = img_mask
 
