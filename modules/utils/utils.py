@@ -7,6 +7,8 @@ import yaml
 import numpy as np
 from yaml import CLoader
 import datetime
+import socket
+import getpass
 import fnmatch
 import random
 import torch
@@ -26,6 +28,15 @@ def getPdcPath():
     For backwards compatibility
     """
     return get_data_dir()
+
+def set_default_cuda_visible_devices():
+    config = get_defaults_config()
+    host_name = socket.gethostname()
+    user_name = getpass.getuser()
+    if host_name in config:
+        if user_name in config[host_name]:
+            gpu_list = config[host_name][user_name]["cuda_visible_devices"]
+            set_cuda_visible_devices(gpu_list)
 
 def get_defaults_config():
     dc_source_dir = getDenseCorrespondenceSourceDir()
