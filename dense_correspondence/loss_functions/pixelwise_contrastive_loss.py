@@ -151,7 +151,6 @@ class PixelwiseContrastiveLoss(object):
         """
 
         num_matches = matches_a.size()[0]
-        print(matches_a.size())
 
         matches_a_descriptors = torch.index_select(image_a_pred, 1, matches_a)
         matches_b_descriptors = torch.index_select(image_b_pred, 1, matches_b)
