@@ -35,6 +35,25 @@ class SpartanDatasetDataType:
     MULTI_OBJECT = 3
     SYNTHETIC_MULTI_OBJECT = 4
 
+def flattened_pixel_locations_to_u_v(flat_pixel_locations, image_width):
+    """
+    :param flat_pixel_locations: A torch.LongTensor of shape torch.Shape([n,1]) where each element
+     is a flattened pixel index, i.e. some integer between 0 and 307,200 for a 640x480 image
+
+    :type flat_pixel_locations: torch.LongTensor
+
+    :return A tuple torch.LongTensor in (u,v) format
+    the pixel and the second column is the v coordinate
+
+    """
+    return (flat_pixel_locations%image_width, torch.floor(flat_pixel_locations/image_width).long())
+
+def uv_to_flattened_pixel_locations(uv_tuple, image_width):
+    """
+    Converts to a flat tensor
+    """
+    flat_pixel_locations = uv_tuple[1]*image_width + uv_tuple[0]
+    return flat_pixel_locations
 
 class SpartanDataset(DenseCorrespondenceDataset):
 
@@ -92,6 +111,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             raise ValueError("You need to give me either a config or config_expanded")
 
         self._pose_data = dict()
+        self._camera_intr = dict()
         self._initialize_rgb_image_to_tensor()
 
         if mode == "test":
@@ -198,7 +218,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             config_file = os.path.join(prefix, 'multi_object', config_file)
             multi_object_scene_config = utils.getDictFromYamlFilename(config_file)
 
-            for key, val in self._multi_object_scene_dict.iteritems():
+            for key, val in iter(self._multi_object_scene_dict.items()):
                 for item in multi_object_scene_config[key]:
                     val.append(item)
 
@@ -491,8 +511,8 @@ class SpartanDataset(DenseCorrespondenceDataset):
         idx_array = np.arange(0, len(object_id_list))
         rand_idxs = np.random.choice(idx_array, 2, replace=False)
 
-        object_1_id = object_id_list[rand_idxs[0]]
-        object_2_id = object_id_list[rand_idxs[1]]
+        object_1_id = list(object_id_list)[rand_idxs[0]]
+        object_2_id = list(object_id_list)[rand_idxs[1]]
 
         assert object_1_id != object_2_id
         return object_1_id, object_2_id
@@ -630,6 +650,9 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         image_a_idx = self.get_random_image_index(scene_name)
         image_a_rgb, image_a_depth, image_a_mask, image_a_pose = self.get_rgbd_mask_pose(scene_name, image_a_idx)
+        camera_intrinsics = self.get_camera_intrinsics(scene_name)
+        camera_intrinsics_K = camera_intrinsics.K
+        
 
         metadata['image_a_idx'] = image_a_idx
 
@@ -646,6 +669,17 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         image_a_depth_numpy = np.asarray(image_a_depth)
         image_b_depth_numpy = np.asarray(image_b_depth)
+        
+        # return if mask size below a threshold
+        image_a_mask_numpy = np.asarray(image_a_mask)
+        image_b_mask_numpy = np.asarray(image_b_mask)
+        img_size = np.size(image_a_mask_numpy)
+        min_mask_size = 0.01*img_size
+
+        if (np.sum(image_a_mask_numpy) < min_mask_size) or (np.sum(image_b_mask_numpy) < min_mask_size):
+            logging.info("not enough pixels in mask, skipping")
+            image_a_rgb_tensor = self.rgb_image_to_tensor(image_a_rgb)
+            return self.return_empty_data(image_a_rgb_tensor, image_a_rgb_tensor)
 
         if self.sample_matches_only_off_mask:
             correspondence_mask = np.asarray(image_a_mask)
@@ -656,7 +690,9 @@ class SpartanDataset(DenseCorrespondenceDataset):
         uv_a, uv_b = correspondence_finder.batch_find_pixel_correspondences(image_a_depth_numpy, image_a_pose,
                                                                             image_b_depth_numpy, image_b_pose,
                                                                             img_a_mask=correspondence_mask,
-                                                                            num_attempts=self.num_matching_attempts)
+                                                                            num_attempts=self.num_matching_attempts,
+                                                                            K=camera_intrinsics_K
+                                                                            )
 
         if for_synthetic_multi_object:
             return image_a_rgb, image_b_rgb, image_a_depth, image_b_depth, image_a_mask, image_b_mask, uv_a, uv_b
@@ -688,7 +724,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
 
         # find non_correspondences
-        image_b_mask_torch = torch.from_numpy(np.asarray(image_b_mask)).type(torch.FloatTensor)
+        image_b_mask_torch = torch.from_numpy(np.asarray(image_b_mask).copy()).type(torch.FloatTensor)
         image_b_shape = image_b_depth_numpy.shape
         image_width = image_b_shape[1]
         image_height = image_b_shape[0]
@@ -738,7 +774,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         # make blind non matches
         matches_a_mask = SD.mask_image_from_uv_flat_tensor(matches_a, image_width, image_height)
-        image_a_mask_torch = torch.from_numpy(np.asarray(image_a_mask)).long()
+        image_a_mask_torch = torch.from_numpy(np.asarray(image_a_mask).copy()).long()
         mask_a_flat = image_a_mask_torch.view(-1,1).squeeze(1)
         #blind_non_matches_a = (mask_a_flat - matches_a_mask).nonzero()
         blind_non_matches_a = torch.nonzero((mask_a_flat - matches_a_mask),as_tuple=False)
@@ -763,7 +799,8 @@ class SpartanDataset(DenseCorrespondenceDataset):
                 elif len(blind_uv_b[0]) == 0:
                     no_blind_matches_found = True
                 else:
-                    blind_non_matches_b = utils.uv_to_flattened_pixel_locations(blind_uv_b, image_width)
+                    
+                    blind_non_matches_b = uv_to_flattened_pixel_locations(blind_uv_b, image_width)
                     blind_non_matches_b=blind_non_matches_b.type(torch.LongTensor)
 
                     if len(blind_non_matches_b) == 0:
