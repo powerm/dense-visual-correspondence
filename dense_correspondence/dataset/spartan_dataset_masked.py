@@ -946,18 +946,14 @@ class SpartanDataset(DenseCorrespondenceDataset):
         metadata["scene_name_b"] = scene_name_b
         metadata["type"] = SpartanDatasetDataType.SYNTHETIC_MULTI_OBJECT
 
-        image_a1_rgb, image_a2_rgb, image_a1_depth, image_a2_depth,\
-        image_a1_mask, image_a2_mask, uv_a1, uv_a2 =\
-         self.get_within_scene_data(scene_name_a, metadata, for_synthetic_multi_object=True)
+        image_a1_rgb, image_a2_rgb, image_a1_depth, image_a2_depth, image_a1_mask, image_a2_mask, uv_a1, uv_a2 = self.get_within_scene_data(scene_name_a, metadata, for_synthetic_multi_object=True)
 
         if uv_a1 is None:
             logging.info("no matches found, returning")
             image_a1_rgb_tensor = self.rgb_image_to_tensor(image_a1_rgb)
             return self.return_empty_data(image_a1_rgb_tensor, image_a1_rgb_tensor)
 
-        image_b1_rgb, image_b2_rgb, image_b1_depth, image_b2_depth,\
-        image_b1_mask, image_b2_mask, uv_b1, uv_b2 =\
-         self.get_within_scene_data(scene_name_b, metadata, for_synthetic_multi_object=True)
+        image_b1_rgb, image_b2_rgb, image_b1_depth, image_b2_depth, image_b1_mask, image_b2_mask, uv_b1,uv_b2 = self.get_within_scene_data(scene_name_b, metadata, for_synthetic_multi_object=True)
 
         if uv_b1 is None:
             logging.info("no matches found, returning")
