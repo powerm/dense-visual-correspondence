@@ -54,8 +54,10 @@ def  npy_to_yaml(processed_dir):
     
     for idx in range(1,num+1):
         #pose = np.linalg.inv(poses[idx-1])
+        
         print(idx)
-        pose = poses[idx-1]
+        pose = myUtils.invert_transform(poses[idx-1])
+        #pose = poses[idx-1]
         pose_data[idx] = dict()
         d = pose_data[idx]
         transform_dict = dictFromMat(pose)
@@ -80,7 +82,8 @@ def npy_to_txt(processed_dir):
     
     for idx in range(1,num+1):
         #pose = np.linalg.inv(poses[idx-1])
-        pose4 = poses[idx-1]
+        #pose4 = poses[idx-1]
+        pose4 = myUtils.invert_transform(poses[idx-1])
         pose_file_name =  "%06i_%s.txt" % (idx, "pose")
         pose_file_full_path = os.path.join(image_dir, pose_file_name)
         with open(pose_file_full_path, 'w') as the_file:
@@ -117,7 +120,7 @@ def main(processed_dir):
 if  __name__ == '__main__':
     
 
-    processed_dir = "/home/cyn/dataset/dense-net-entire/pdc/logs_proto/000111_1/processed"
+    processed_dir = "/home/cyn/dataset/dense-net-entire/pdc/logs_proto/000111_6/processed"
 
     main(processed_dir)
 

@@ -113,8 +113,8 @@ def main(processed_dir):
         convert_rgb_to_intensity=True)
         cam_pose = np.loadtxt(os.path.join(images_dir, "%06d_pose.txt"%(i)))
         
-        #volume.integrate(rgbd, cameraIntrinsics, np.linalg.inv(cam_pose))
-        volume.integrate(rgbd, cameraIntrinsics, cam_pose)
+        volume.integrate(rgbd, cameraIntrinsics, myUtils.invert_transform(cam_pose))
+        #volume.integrate(rgbd, cameraIntrinsics, cam_pose)
         print("integrate sucess!")
     
     mesh = volume.extract_triangle_mesh()

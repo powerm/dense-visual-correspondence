@@ -372,7 +372,7 @@ def main(processed_dir):
     return 0
 
 if __name__ == "__main__":
-    processed_dir = "/home/cyn/dataset/dense-net-entire/pdc/logs_proto/000111_5/processed"
+    processed_dir = "/home/cyn/dataset/dense-net-entire/pdc/logs_proto/000111_1/processed"
     render_depth(processed_dir)
 
     
