@@ -8,7 +8,7 @@ different_objects: False
 multiple_object: False # sample from multi object scenes
 kernel_variance: 0.25
 networks:
-- "fox_M_background_0.500_3"
+- "caterpillar_3"
 
 norm_diff_threshold_dict:
   hats_consistent_M_background_0.500_3:

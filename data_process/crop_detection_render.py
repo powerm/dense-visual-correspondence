@@ -288,7 +288,7 @@ def render_depth(processed_dir):
     del vis
     return 0
 
-def main(processed_dir):
+def render_mask_depth(processed_dir):
     meshPath = os.path.join(processed_dir, 'fusion_mesh_foreground.ply')
     images_dir = os.path.join(processed_dir, 'images')
     image_masks_dir = os.path.join(processed_dir , 'image_masks')
@@ -370,6 +370,10 @@ def main(processed_dir):
 
     del vis
     return 0
+
+def main(processed_dir):
+    render_depth(processed_dir)
+    render_mask_depth(processed_dir)
 
 if __name__ == "__main__":
     processed_dir = "/home/cyn/dataset/dense-net-entire/pdc/logs_proto/000111_1/processed"
