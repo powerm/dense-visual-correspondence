@@ -22,7 +22,7 @@ train_config_file = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'confi
 train_config = utils.getDictFromYamlFilename(train_config_file)
 
 dataset = SpartanDataset(config=config)
-logging_dir = "trained_models/fox3"
+logging_dir = "trained_models/fox2"
 num_iterations = 3500
 num_image_pairs = 100
 

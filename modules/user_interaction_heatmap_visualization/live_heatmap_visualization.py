@@ -30,7 +30,7 @@ COLOR_RED = (0, 0, 255)
 COLOR_GREEN = (0,255,0)
 
 utils.set_default_cuda_visible_devices()
-eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', 'evaluation.yaml')
+eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', 'cater.yaml')
 EVAL_CONFIG = utils.getDictFromYamlFilename(eval_config_filename)
 
 
