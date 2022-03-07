@@ -1,6 +1,6 @@
 logs_root_path: logs_proto
 
 single_object_scenes_config_files:
-- fox.yaml
+- fox_2.yaml
 
 multi_object_scenes_config_files: []

@@ -1,0 +1,18 @@
+logs_root_path: logs_proto
+object_id: "fox"
+train:
+- "000112_1" # mug rack
+- "000112_2" # left table background
+- "000112_3" # left table w/ mug rack
+- "000112_4" # empty background
+- "000112_5" # shoe rack sturdy
+- "000112_6" # shoe rack sturdy
+- "000112_7" # shoe rack sturdy
+- "000112_8" # shoe rack sturdy
+test: 
+- "000111_1" # mug rack
+- "000111_2" # left table background
+- "000111_3" # left table w/ mug rack
+- "000111_4" # empty background
+- "000111_5" # shoe rack sturdy
+evaluation_labeled_data_path: []

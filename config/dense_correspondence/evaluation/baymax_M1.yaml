@@ -1,0 +1,11 @@
+params:
+  num_image_pairs: 25
+  num_matches_per_image_pair: 100
+
+networks:
+  baymax_M_background_1.000_3:
+    path_to_network_params: trained_models/baymax/baymax_M_background_1.000_3/003501.pth
+
+dataset: [] # which dataset to use, not used for now
+
+output_dir: analysis

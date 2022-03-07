@@ -4,7 +4,7 @@ params:
 
 networks:
   fox_M_background_0.500_3:
-    path_to_network_params: trained_models/fox/fox_M_background_0.500_3/003501.pth
+    path_to_network_params: trained_models/fox2/fox_M_background_0.500_3/003501.pth
 
 dataset: [] # which dataset to use, not used for now
 
