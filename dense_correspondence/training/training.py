@@ -297,6 +297,7 @@ class DenseCorrespondenceTraining(object):
 
                 match_type, \
                 img_a, img_b, \
+                img_a_depth, img_b_depth,\
                 matches_a, matches_b, \
                 masked_non_matches_a, masked_non_matches_b, \
                 background_non_matches_a, background_non_matches_b, \
@@ -312,7 +313,8 @@ class DenseCorrespondenceTraining(object):
                 
                 img_a = Variable(img_a.cuda(), requires_grad=False)
                 img_b = Variable(img_b.cuda(), requires_grad=False)
-
+                img_a_depth = Variable(img_a_depth.cuda(), requires_grad=False)
+                img_b_depth = Variable(img_b_depth.cuda(), requires_grad=False)
                 matches_a = Variable(matches_a.cuda().squeeze(0), requires_grad=False)
                 matches_b = Variable(matches_b.cuda().squeeze(0), requires_grad=False)
                 masked_non_matches_a = Variable(masked_non_matches_a.cuda().squeeze(0), requires_grad=False)
@@ -328,10 +330,10 @@ class DenseCorrespondenceTraining(object):
                 self.adjust_learning_rate(optimizer, loss_current_iteration)
 
                 # run both images through the network
-                image_a_pred = dcn.forward(img_a)
+                image_a_pred = dcn.forward(img_a, img_a_depth)
                 image_a_pred = dcn.process_network_output(image_a_pred, batch_size)
 
-                image_b_pred = dcn.forward(img_b)
+                image_b_pred = dcn.forward(img_b, img_b_depth)
                 image_b_pred = dcn.process_network_output(image_b_pred, batch_size)
 
                 # get loss
