@@ -205,7 +205,7 @@ class DenseCorrespondenceDataset(data.Dataset):
             metadata = dict()
 
         empty = DenseCorrespondenceDataset.empty_tensor()
-        return -1, image_a_rgb, image_b_rgb, empty, empty, empty, empty, empty, empty, empty, empty, metadata
+        return -1, image_a_rgb, image_b_rgb,image_a_rgb, image_b_rgb, empty, empty, empty, empty, empty, empty, empty, empty, metadata
 
     @staticmethod
     def empty_tensor():
@@ -533,6 +533,12 @@ class DenseCorrespondenceDataset(data.Dataset):
             self.enable_domain_randomization()
         else:
             self.disable_domain_randomization()
+        
+        if(self.mode == "train") and (training_config["training"]["flip_augmentation"]):
+            logging.info("enabling flip_augmentation")
+            self.enable_flip_augmentation()
+        else:
+            self.disable_flip_augmentation()
 
         # self._training_config = copy.deepcopy(training_config["training"])
 
@@ -595,6 +601,16 @@ class DenseCorrespondenceDataset(data.Dataset):
 
     def set_test_mode(self):
         self.mode = "test"
+        
+    def enable_flip_augmentation(self):
+        """
+        Turns on flip augmentation
+        """
+        self._flip_augmentation = True
+    
+    def disable_flip_augmentation(self):
+        
+        self._flip_augmentation = False
 
     def enable_domain_randomization(self):
         """

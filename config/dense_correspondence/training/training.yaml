@@ -14,6 +14,7 @@ training:
   batch_size: 1
   # Datset config
   domain_randomize: True
+  flip_augmentation: True
   num_matching_attempts: 10000
   sample_matches_only_off_mask: True
   num_non_matches_per_match: 150
@@ -41,9 +42,9 @@ dense_correspondence_network:
   image_height: 480
   normalize: False
   backbone:
-    model_class: "Resnet"         # options: {Resnet, Unet}
+    model_class: "Fuse"         # options: {Resnet, Unet, Fuse}
     # If Resnet
-    resnet_name: "Resnet34_8s"  # options: {Resnet34_8s, Resnet101_8s, etc.}
+    resnet_name: "FuseNet"  # options: {Resnet34_8s, Resnet101_8s, etc.}
     # If Unet
     # currently no options supported
 

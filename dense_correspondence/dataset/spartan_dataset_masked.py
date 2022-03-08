@@ -59,7 +59,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
     PADDED_STRING_WIDTH = 6
 
-    def __init__(self, debug=False, mode="train", config=None, config_expanded=None, verbose=False):
+    def __init__(self, debug=False, mode="train", config=None, config_expanded=None, trans = True,verbose=False):
         """
         :param config: This is for creating a dataset from a composite dataset config file.
             This is of the form:
@@ -94,6 +94,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             # that get plotted in debug mode.
             # This is just so the dataset will "run".
             self._domain_randomize = False
+            self._flip_augmentation =True
             self.num_masked_non_matches_per_match = 5
             self.num_background_non_matches_per_match = 5
             self.cross_scene_num_samples = 1000
@@ -102,6 +103,8 @@ class SpartanDataset(DenseCorrespondenceDataset):
             self.sample_matches_only_off_mask = True
 
         self._verbose = verbose
+        # is tranform the rgb data
+        self._trans =trans
 
         if config is not None:
             self._setup_scene_data(config)
@@ -598,6 +601,14 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         return self.get_within_scene_data(scene_name, metadata)
 
+    def  convert_depth_gray(self, img_depth):
+        
+        img_depth = (img_depth- img_depth.min())/(img_depth.max()- img_depth.min())*255
+        img_depth = img_depth.astype(np.unit8)
+        return img_depth
+        
+        
+    
     def get_within_scene_data(self, scene_name, metadata, for_synthetic_multi_object=False):
         """
         The method through which the dataset is accessed for training.
@@ -709,15 +720,11 @@ class SpartanDataset(DenseCorrespondenceDataset):
             image_a_rgb = correspondence_augmentation.random_domain_randomize_background(image_a_rgb, image_a_mask)
             image_b_rgb = correspondence_augmentation.random_domain_randomize_background(image_b_rgb, image_b_mask)
 
-        if not self.debug:
-            [image_a_rgb, image_a_mask], uv_a = correspondence_augmentation.random_image_and_indices_mutation([image_a_rgb, image_a_mask], uv_a)
-            [image_b_rgb, image_b_mask], uv_b = correspondence_augmentation.random_image_and_indices_mutation(
-                [image_b_rgb, image_b_mask], uv_b)
-        else:  # also mutate depth just for plotting
-            [image_a_rgb, image_a_depth, image_a_mask], uv_a = correspondence_augmentation.random_image_and_indices_mutation(
-                [image_a_rgb, image_a_depth, image_a_mask], uv_a)
-            [image_b_rgb, image_b_depth, image_b_mask], uv_b = correspondence_augmentation.random_image_and_indices_mutation(
-                [image_b_rgb, image_b_depth, image_b_mask], uv_b)
+        
+        if  self._flip_augmentation:
+            [image_a_rgb, image_a_depth,image_a_mask], uv_a = correspondence_augmentation.random_image_and_indices_mutation([image_a_rgb, image_a_depth,image_a_mask], uv_a)
+            [image_b_rgb, image_b_depth,image_b_mask], uv_b = correspondence_augmentation.random_image_and_indices_mutation(
+                [image_b_rgb, image_b_depth,image_b_mask], uv_b)
 
         image_a_depth_numpy = np.asarray(image_a_depth)
         image_b_depth_numpy = np.asarray(image_b_depth)
@@ -751,8 +758,22 @@ class SpartanDataset(DenseCorrespondenceDataset):
         # convert PIL.Image to torch.FloatTensor
         image_a_rgb_PIL = image_a_rgb
         image_b_rgb_PIL = image_b_rgb
-        image_a_rgb = self.rgb_image_to_tensor(image_a_rgb)
-        image_b_rgb = self.rgb_image_to_tensor(image_b_rgb)
+        # image_a_rgb = self.rgb_image_to_tensor(image_a_rgb)
+        # image_b_rgb = self.rgb_image_to_tensor(image_b_rgb)
+        if self._trans:
+            image_a_rgb = self.rgb_image_to_tensor(image_a_rgb)
+            image_b_rgb = self.rgb_image_to_tensor(image_b_rgb)
+        else:
+            image_a_rgb = transforms.ToTensor()(image_a_rgb)
+            image_b_rgb = transforms.ToTensor()(image_b_rgb)
+        image_a_depth_tensor = self.depth_image_to_tensor(image_a_depth_numpy)
+        image_b_depth_tensor = self.depth_image_to_tensor(image_b_depth_numpy)
+
+        
+        # image_a_rgb = torch.from_numpy(np.asarray(image_a_rgb).copy()).type(torch.FloatTensor)
+        # image_b_rgb = torch.from_numpy(np.asarray(image_b_rgb).copy()).type(torch.FloatTensor)
+        
+        # conver 
 
         matches_a = SD.flatten_uv_tensor(uv_a, image_width)
         matches_b = SD.flatten_uv_tensor(uv_b, image_width)
@@ -879,7 +900,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
 
 
-        return metadata["type"], image_a_rgb, image_b_rgb, matches_a, matches_b, masked_non_matches_a, masked_non_matches_b, background_non_matches_a, background_non_matches_b, blind_non_matches_a, blind_non_matches_b, metadata
+        return metadata["type"], image_a_rgb, image_b_rgb, image_a_depth_tensor, image_b_depth_tensor, matches_a, matches_b, masked_non_matches_a, masked_non_matches_b, background_non_matches_a, background_non_matches_b, blind_non_matches_a, blind_non_matches_b, metadata
 
     def create_non_matches(self, uv_a, uv_b_non_matches, multiplier):
         """
@@ -1019,8 +1040,22 @@ class SpartanDataset(DenseCorrespondenceDataset):
         # convert PIL.Image to torch.FloatTensor
         merged_rgb_1_PIL = merged_rgb_1
         merged_rgb_2_PIL = merged_rgb_2
-        merged_rgb_1 = self.rgb_image_to_tensor(merged_rgb_1)
-        merged_rgb_2 = self.rgb_image_to_tensor(merged_rgb_2)
+        # merged_rgb_1 = self.rgb_image_to_tensor(merged_rgb_1)
+        # merged_rgb_2 = self.rgb_image_to_tensor(merged_rgb_2)
+        
+        if self._trans:
+            merged_rgb_1 = self.rgb_image_to_tensor(merged_rgb_1)
+            merged_rgb_2 = self.rgb_image_to_tensor(merged_rgb_2)
+        else:
+            merged_rgb_1 = transforms.ToTensor()(merged_rgb_1)
+            merged_rgb_2 = transforms.ToTensor()(merged_rgb_2)
+
+        image_a1_depth_tensor = self.depth_image_to_tensor(np.asarray(image_a1_depth))
+        image_a2_depth_tensor = self.depth_image_to_tensor(np.asarray(image_a2_depth))
+        # image_a1_depth_gray = self.convert_depth_gray(image_a1_depth)
+        # image_a2_depth_gray = self.convert_depth_gray(image_a2_depth)
+        # image_a1_depth_gray = np.expand_dims(image_a1_depth_gray.astype(np.float32),axis=0)
+        # image_a2_depth_gray = np.expand_dims(image_a2_depth_gray.astype(np.float32),axis=0)
 
         matches_a = SD.flatten_uv_tensor(matches_1, image_width)
         matches_b = SD.flatten_uv_tensor(matches_2, image_width)
@@ -1089,7 +1124,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
                                                                circ_color='b')
 
 
-        return metadata["type"], merged_rgb_1, merged_rgb_2, matches_a, matches_b, masked_non_matches_a, masked_non_matches_b, background_non_matches_a, background_non_matches_b, SD.empty_tensor(), SD.empty_tensor(), metadata
+        return metadata["type"], merged_rgb_1, merged_rgb_2, image_a1_depth_tensor, image_a2_depth_tensor, matches_a, matches_b, masked_non_matches_a, masked_non_matches_b, background_non_matches_a, background_non_matches_b, SD.empty_tensor(), SD.empty_tensor(), metadata
 
 
     def get_across_scene_data(self, scene_name_a, scene_name_b, metadata):
@@ -1138,15 +1173,10 @@ class SpartanDataset(DenseCorrespondenceDataset):
             image_a_rgb = correspondence_augmentation.random_domain_randomize_background(image_a_rgb, image_a_mask)
             image_b_rgb = correspondence_augmentation.random_domain_randomize_background(image_b_rgb, image_b_mask)
 
-        if not self.debug:
+        if self._flip_augmentation:
             [image_a_rgb, image_a_mask], blind_uv_a = correspondence_augmentation.random_image_and_indices_mutation([image_a_rgb, image_a_mask], blind_uv_a)
             [image_b_rgb, image_b_mask], blind_uv_b = correspondence_augmentation.random_image_and_indices_mutation(
                 [image_b_rgb, image_b_mask], blind_uv_b)
-        else:  # also mutate depth just for plotting
-            [image_a_rgb, image_a_depth, image_a_mask], blind_uv_a = correspondence_augmentation.random_image_and_indices_mutation(
-                [image_a_rgb, image_a_depth, image_a_mask], blind_uv_a)
-            [image_b_rgb, image_b_depth, image_b_mask], blind_uv_b = correspondence_augmentation.random_image_and_indices_mutation(
-                [image_b_rgb, image_b_depth, image_b_mask], blind_uv_b)
 
         image_a_depth_numpy = np.asarray(image_a_depth)
         image_b_depth_numpy = np.asarray(image_b_depth)
@@ -1161,8 +1191,20 @@ class SpartanDataset(DenseCorrespondenceDataset):
         # convert PIL.Image to torch.FloatTensor
         image_a_rgb_PIL = image_a_rgb
         image_b_rgb_PIL = image_b_rgb
-        image_a_rgb = self.rgb_image_to_tensor(image_a_rgb)
-        image_b_rgb = self.rgb_image_to_tensor(image_b_rgb)
+        if self._trans:
+            image_a_rgb = self.rgb_image_to_tensor(image_a_rgb)
+            image_b_rgb = self.rgb_image_to_tensor(image_b_rgb)
+        else:
+            image_a_rgb = transforms.ToTensor()(image_a_rgb)
+            image_b_rgb = transforms.ToTensor()(image_b_rgb)
+        
+        image_a_depth_tensor = self.depth_image_to_tensor(image_a_depth_numpy)
+        image_b_depth_tensor = self.depth_image_to_tensor(image_b_depth_numpy)
+        # image_a_depth_gray = self.convert_depth_gray(image_a_depth_numpy)
+        # image_b_depth_gray = self.convert_depth_gray(image_b_depth_numpy)
+        # image_a_depth_gray = np.expand_dims(image_a_depth_gray.astype(np.float32),axis=0)
+        # image_b_depth_gray = np.expand_dims(image_b_depth_gray.astype(np.float32),axis=0)
+
 
         empty_tensor = SD.empty_tensor()
 
@@ -1177,7 +1219,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
                                                                    plot_blind_uv_a, plot_blind_uv_b,
                                                                    circ_color='k', show=True)
 
-        return metadata["type"], image_a_rgb, image_b_rgb, empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, blind_uv_a_flat, blind_uv_b_flat, metadata
+        return metadata["type"], image_a_rgb, image_b_rgb,image_a_depth_tensor, image_b_depth_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, blind_uv_a_flat, blind_uv_b_flat, metadata
 
     def get_image_mean(self):
         """
@@ -1221,6 +1263,21 @@ class SpartanDataset(DenseCorrespondenceDataset):
         """
 
         return self._rgb_image_to_tensor(img)
+    
+    def  depth_image_to_tensor(self, depth):
+        """
+        Transforms a PIL.Image to a torch.FloatTensor.
+        Performs normalization of mean and std dev
+        :param img: input image
+        :type img: PIL.Image
+        :return:
+        :rtype:
+        """
+        depth = (depth-depth.min())/(depth.max()-depth.min())*255
+        depth = depth.astype(np.uint8)
+        depth_image = transforms.ToTensor()(depth[: ,  :,  np.newaxis])
+        return depth_image
+    
 
     def get_first_image_index(self, scene_name):
         """
