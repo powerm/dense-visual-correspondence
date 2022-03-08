@@ -15,11 +15,33 @@ import  modules.utils.utils as utils
 #utils.add_dense_correspondence_to_python_path()
 
 import dense_correspondence.network.resnet_dilated as resnet_dilated
+import   dense_correspondence.network.fusenet_model  as fusenet_model
+import  dense_correspondence.network.resnet_fuse as resnet_fuse
 #import  resnet_dilated
 from torchvision import transforms
 from dense_correspondence.dataset.spartan_dataset_masked import SpartanDataset
 
 
+DEFAULT_IMAGE_MEAN = [0.5573105812072754, 0.37420374155044556, 0.37020164728164673]
+DEFAULT_IMAGE_STD_DEV = [0.24336038529872894, 0.2987397611141205, 0.31875079870224]
+norm_transform = transforms.Normalize(DEFAULT_IMAGE_MEAN, DEFAULT_IMAGE_STD_DEV)
+rgb_image_to_tensor_trans =  transforms.Compose([transforms.ToTensor(), norm_transform])
+def rgb_image_to_tensor(rgb):
+    return rgb_image_to_tensor_trans(rgb)
+
+def  depth_image_to_tensor(depth):
+    """
+    Transforms a PIL.Image to a torch.FloatTensor.
+    Performs normalization of mean and std dev
+    :param img: input image
+    :type img: PIL.Image
+    :return:
+    :rtype:
+    """
+    depth = (depth-depth.min())/(depth.max()-depth.min())*255
+    depth = depth.astype(np.uint8)
+    depth_image = transforms.ToTensor()(depth[: ,  :,  np.newaxis])
+    return depth_image
 
 class DenseCorrespondenceNetwork(nn.Module):
 
@@ -239,7 +261,7 @@ class DenseCorrespondenceNetwork(nn.Module):
 
         return res
 
-    def forward(self, img_tensor):
+    def forward(self,  img_rgb,  img_depth):
         """
         Simple forward pass on the network.
 
@@ -254,18 +276,25 @@ class DenseCorrespondenceNetwork(nn.Module):
         :return: torch.Variable with shape [N, D, H, W],
         :rtype:
         """
-
-        res = self.fcn(img_tensor)
+        
+        if isinstance(self.fcn, fusenet_model.FuseNet) :
+            res = self.fcn(img_rgb, img_depth)
+        else:
+            res = self.fcn(img_rgb, img_depth)
         if self._normalize:
-            #print "normalizing descriptor norm"
+                #print "normalizing descriptor norm"
             norm = torch.norm(res, 2, 1) # [N,1,H,W]
             res = res/norm
 
-
-
         return res
 
-    def forward_single_image_tensor(self, img_tensor):
+    def  convert_depth_gray(self, img_depth):
+        
+        img_depth_gray = (255-img_depth*256.0/2048.0)
+        img = np.where(img_depth_gray<0,  0,  img_depth_gray)
+        return img
+    
+    def forward_single_image_tensor(self, img_tensor, img_depth):
         """
         Simple forward pass on the network.
 
@@ -278,28 +307,40 @@ class DenseCorrespondenceNetwork(nn.Module):
         :return: torch.FloatTensor with shape  [H, W, D]
         :rtype:
         """
-
-        assert len(img_tensor.shape) == 3
-
-
-        # transform to shape [1,3,H,W]
-        img_tensor = img_tensor.unsqueeze(0)
-
-        # make sure it's on the GPU
-        img_tensor = torch.tensor(img_tensor, device=torch.device("cuda"))
-
-
-        res = self.forward(img_tensor) # shape [1,D,H,W]
-        # print "res.shape 1", res.shape
-
-
-        res = res.squeeze(0) # shape [D,H,W]
-        # print "res.shape 2", res.shape
-
-        res = res.permute(1,2,0) # shape [H,W,D]
-        # print "res.shape 3", res.shape
-
-        return res
+        if  isinstance(self.fcn, resnet_dilated.Resnet34_8s):
+            #assert len(img_tensor.shape) == 3
+            # transform to shape [1,3,H,W]
+            img_tensor = rgb_image_to_tensor(img_tensor)
+            img_tensor = img_tensor.unsqueeze(0)
+            # make sure it's on the GPU
+            #img_tensor = torch.tensor(img_tensor, device=torch.device("cuda"))
+            img_tensor = img_tensor.to(device=torch.device("cuda"))
+            res = self.forward(img_tensor, img_depth) # shape [1,D,H,W]
+            # print "res.shape 1", res.shape
+            res = res.squeeze(0) # shape [D,H,W]
+            # print "res.shape 2", res.shape
+            res = res.permute(1,2,0) # shape [H,W,D]
+            # print "res.shape 3", res.shape
+            return res
+        else:
+            # img_tensor = np.asarray(img_tensor).astype(np.float32)
+            # img_tensor = torch.from_numpy(img_tensor)
+            # img_tensor = img_tensor.permute(2,0,1)
+            img_tensor =  transforms.ToTensor()(img_tensor)
+            img_tensor = img_tensor.unsqueeze(0)
+            img_rgb_tensor = img_tensor.to(device = torch.device("cuda"))
+            
+            
+            img_depth_tensor =  depth_image_to_tensor(np.asarray(img_depth))
+            img_depth_tensor = img_depth_tensor.unsqueeze(0)
+            img_depth_tensor = img_depth_tensor.to(device = torch.device("cuda"))
+            
+            
+            res = self.forward(img_rgb_tensor, img_depth_tensor)
+            res = res.squeeze(0)
+            res = res.permute(1,2,0)
+            return res
+            
 
 
 
@@ -379,6 +420,13 @@ class DenseCorrespondenceNetwork(nn.Module):
         
         elif config["backbone"]["model_class"] == "Unet":
             fcn = DenseCorrespondenceNetwork.get_unet(config)
+        
+        elif config["backbone"]["model_class"] == "Fuse":
+            fusenet = config["backbone"]["resnet_name"]
+            fcn = getattr(fusenet_model, fusenet)(descriptor_dimension= config['descriptor_dimension'])
+        elif config["backbone"]["model_class"] =="ResFuse":
+            fusenet = config["backbone"]["resnet_name"]
+            fcn = getattr(resnet_fuse, fusenet)(num_classes= config['descriptor_dimension'])
 
         else:
             raise ValueError("Can't build backbone network.  I don't know this backbone model class!")
