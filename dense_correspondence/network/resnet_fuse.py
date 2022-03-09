@@ -106,6 +106,7 @@ class Resnet34_8s_fuse(nn.Module):
 
 class MS_CAM(nn.Module):
     """
+    https://zhuanlan.zhihu.com/p/424031096
     """ 
     
     def __init__(self, channels =64, r=4):

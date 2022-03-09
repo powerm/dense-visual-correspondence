@@ -277,8 +277,8 @@ class DenseCorrespondenceNetwork(nn.Module):
         :rtype:
         """
         
-        if isinstance(self.fcn, fusenet_model.FuseNet) :
-            res = self.fcn(img_rgb, img_depth)
+        if isinstance(self.fcn, resnet_dilated.Resnet34_8s) :
+            res = self.fcn(img_rgb)
         else:
             res = self.fcn(img_rgb, img_depth)
         if self._normalize:
