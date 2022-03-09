@@ -437,9 +437,9 @@ class DenseCorrespondenceEvaluation(object):
                 descriptor_images[scene_name] = dict()
             if image_idx in descriptor_images[scene_name]:
                 continue
-            rgb, _, _, _ = dataset.get_rgbd_mask_pose(scene_name, image_idx)
-            rgb_tensor = dataset.rgb_image_to_tensor(rgb)
-            res = dcn.forward_single_image_tensor(rgb_tensor).data.cpu().numpy()
+            rgb, depth, _, _ = dataset.get_rgbd_mask_pose(scene_name, image_idx)
+            #rgb_tensor = dataset.rgb_image_to_tensor(rgb)
+            res = dcn.forward_single_image_tensor(rgb, depth).data.cpu().numpy()
             
             descriptor_images[scene_name][image_idx] = res
 
@@ -898,12 +898,12 @@ class DenseCorrespondenceEvaluation(object):
         mask_b = np.asarray(mask_b)
 
         # compute dense descriptors
-        rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
-        rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
+        #rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
+        #rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
 
         # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
-        res_a = dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-        res_b = dcn.forward_single_image_tensor(rgb_b_tensor).data.cpu().numpy()
+        res_a = dcn.forward_single_image_tensor(rgb_a, depth_a).data.cpu().numpy()
+        res_b = dcn.forward_single_image_tensor(rgb_b, depth_b).data.cpu().numpy()
 
         if camera_intrinsics_matrix is None:
             camera_intrinsics = dataset.get_camera_intrinsics(scene_name)
@@ -1224,11 +1224,11 @@ class DenseCorrespondenceEvaluation(object):
         :return: None
         """
 
-        rgb_a, _, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name, img_a_idx)
+        rgb_a, depth_a, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name, img_a_idx)
 
-        rgb_b, _, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name, img_b_idx)
+        rgb_b, depth_b, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name, img_b_idx)
 
-        DenseCorrespondenceEvaluation.single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b, num_matches)
+        DenseCorrespondenceEvaluation.single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b,depth_a, depth_b, num_matches)
 
     @staticmethod
     def single_cross_scene_image_pair_qualitative_analysis(dcn, dataset, scene_name_a,
@@ -1251,11 +1251,11 @@ class DenseCorrespondenceEvaluation(object):
         :rtype: PIL.Image, PIL.Image
         """
 
-        rgb_a, _, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name_a, img_a_idx)
+        rgb_a, depth_a, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name_a, img_a_idx)
 
-        rgb_b, _, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name_b, img_b_idx)
+        rgb_b, depth_b, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name_b, img_b_idx)
 
-        DenseCorrespondenceEvaluation.single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b, num_matches)
+        DenseCorrespondenceEvaluation.single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b, depth_a, depth_b, num_matches)
         return rgb_a, rgb_b
 
     @staticmethod
@@ -1292,20 +1292,20 @@ class DenseCorrespondenceEvaluation(object):
         uv_b = DCE.clip_pixel_to_image_size_and_round(uv_b, image_width, image_height)
 
 
-        rgb_a, _, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name_a, img_a_idx)
+        rgb_a, depth_a, mask_a, _ = dataset.get_rgbd_mask_pose(scene_name_a, img_a_idx)
 
-        rgb_b, _, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name_b, img_b_idx)
+        rgb_b, depth_b, mask_b, _ = dataset.get_rgbd_mask_pose(scene_name_b, img_b_idx)
 
         mask_a = np.asarray(mask_a)
         mask_b = np.asarray(mask_b)
 
         # compute dense descriptors
-        rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
-        rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
+        #rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
+        # rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
 
         # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
-        res_a = dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-        res_b = dcn.forward_single_image_tensor(rgb_b_tensor).data.cpu().numpy()
+        res_a = dcn.forward_single_image_tensor(rgb_a, depth_a).data.cpu().numpy()
+        res_b = dcn.forward_single_image_tensor(rgb_b, depth_b).data.cpu().numpy()
 
         best_match_uv, best_match_diff, norm_diffs = \
         DenseCorrespondenceNetwork.find_best_match(uv_a, res_a, res_b, debug=False)
@@ -1349,7 +1349,7 @@ class DenseCorrespondenceEvaluation(object):
         return rgb_a, rgb_b
 
     @staticmethod
-    def single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b,
+    def single_image_pair_qualitative_analysis(dcn, dataset, rgb_a, rgb_b, mask_a, mask_b, depth_a, depth_b,
                                                num_matches):
         """
         Computes qualtitative assessment of DCN performance for a pair of
@@ -1374,12 +1374,12 @@ class DenseCorrespondenceEvaluation(object):
         mask_b = np.asarray(mask_b)
 
         # compute dense descriptors
-        rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
-        rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
+        #rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
+        #rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
 
         # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
-        res_a = dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-        res_b = dcn.forward_single_image_tensor(rgb_b_tensor).data.cpu().numpy()
+        res_a = dcn.forward_single_image_tensor(rgb_a, depth_a).data.cpu().numpy()
+        res_b = dcn.forward_single_image_tensor(rgb_b, depth_b).data.cpu().numpy()
 
 
         # sample points on img_a. Compute best matches on img_b
@@ -1474,12 +1474,12 @@ class DenseCorrespondenceEvaluation(object):
 
         if res_a is None and res_b is None:
             # compute dense descriptors
-            rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
-            rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
+            #rgb_a_tensor = dataset.rgb_image_to_tensor(rgb_a)
+            #rgb_b_tensor = dataset.rgb_image_to_tensor(rgb_b)
 
             # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
-            res_a = dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-            res_b = dcn.forward_single_image_tensor(rgb_b_tensor).data.cpu().numpy()
+            res_a = dcn.forward_single_image_tensor(rgb_a, depth_a).data.cpu().numpy()
+            res_b = dcn.forward_single_image_tensor(rgb_b, depth_b).data.cpu().numpy()
 
 
         # vectors to allow re-ordering
@@ -2275,7 +2275,7 @@ class DenseCorrespondenceEvaluation(object):
         for i in range(0,num_images):
             rgb, depth, mask, _ = dataset.get_random_rgbd_mask_pose()
             img_tensor = dataset.rgb_image_to_tensor(rgb)
-            res = dcn.forward_single_image_tensor(img_tensor)  # [H, W, D]
+            res = dcn.forward_single_image_tensor(rgb, depth)  # [H, W, D]
 
             mask_tensor = to_tensor(mask).cuda()
             entire_image_stats, mask_image_stats = compute_descriptor_statistics(res, mask_tensor)
@@ -2513,8 +2513,8 @@ class DenseCorrespondenceEvaluation(object):
 
             scene_name = dataset.get_random_single_object_scene_name(object_id)
             img_idx = dataset.get_random_image_index(scene_name)
-            rgb = dataset.get_rgb_image_from_scene_name_and_idx(scene_name, img_idx)
-            mask = dataset.get_mask_image_from_scene_name_and_idx(scene_name, img_idx)
+            rgb,depth, mask,_ = dataset.get_rgbd_mask_pose(scene_name, img_idx)
+            #mask = dataset.get_mask_image_from_scene_name_and_idx(scene_name, img_idx)
 
             mask_torch = torch.from_numpy(np.asarray(mask)).long()
             mask_inv = 1 - mask_torch
@@ -2534,8 +2534,8 @@ class DenseCorrespondenceEvaluation(object):
             # plt.legend()
             # plt.show()
 
-            img_tensor = dataset.rgb_image_to_tensor(rgb)
-            res = dcn.forward_single_image_tensor(img_tensor)  # [H, W, D]
+            #img_tensor = dataset.rgb_image_to_tensor(rgb)
+            res = dcn.forward_single_image_tensor(rgb, depth)  # [H, W, D]
             res = res.data.cpu().numpy()
 
             descriptors_object = np.zeros((len(object_u_samples),d))
