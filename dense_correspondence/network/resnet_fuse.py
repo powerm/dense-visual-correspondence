@@ -316,6 +316,64 @@ class Resnet34_8s_atten_fuse(nn.Module):
         return pre
     
     
+class Resnet34_8s_cat_fuse(nn.Module):
+    
+    def __init__(self, num_classes=1000):
+        
+        super(Resnet34_8s_cat_fuse, self).__init__()
+        
+        # Load the pretrained weights, remove avg pool
+        # layer and get the output stride of 8
+        resnet34_8s_rgb = models.resnet34(fully_conv=True,
+                                       pretrained=True,
+                                       output_stride=8,
+                                       remove_avg_pool_layer=True)
+        # Randomly initialize the 1x1 Conv scoring layer
+        resnet34_8s_rgb.fc = nn.Conv2d(resnet34_8s_rgb.inplanes, resnet34_8s_rgb.inplanes, 1)
+        self.resnet34_8s_rgb = resnet34_8s_rgb
+        self._normal_initialization(self.resnet34_8s_rgb.fc)
+        
+        resnet34_8s_depth = models.resnet34(fully_conv=True,
+                                       pretrained=True,
+                                       output_stride=8,
+                                       remove_avg_pool_layer=True)
+        resnet34_8s_depth.fc = nn.Conv2d(resnet34_8s_depth.inplanes, resnet34_8s_depth.inplanes, 1)
+        avg =  torch.mean(resnet34_8s_depth.conv1.weight.data, dim=1)
+        avg = avg.unsqueeze(1)
+        resnet34_8s_depth.conv1 =  nn.Conv2d(1, 64, kernel_size=7, stride=2,padding=3)
+        resnet34_8s_depth.conv1.weight.data = avg
+        self.resnet34_8s_depth = resnet34_8s_depth
+        self._normal_initialization(self.resnet34_8s_depth.fc)
+        
+        #self.aff = AFF(channels=resnet34_8s_rgb.inplanes, r=4)
+        self.last_conv = nn.Conv2d(resnet34_8s_rgb.inplanes*2, resnet34_8s_rgb.inplanes, 1)
+        
+        self.last = nn.Conv2d(resnet34_8s_rgb.inplanes, num_classes, 1)
+    
+    def _normal_initialization(self, layer):
+        
+        layer.weight.data.normal_(0, 0.01)
+        layer.bias.data.zero_()
+        
+    def forward(self, rgb, depth, feature_alignment=False):
+        
+        input_spatial_dim = rgb.size()[2:]
+        
+        if feature_alignment:
+            
+            rgb = adjust_input_image_size_for_proper_feature_alignment(rgb, output_stride=8)
+        
+        rgb_pre = self.resnet34_8s_rgb(rgb)
+        depth_pre = self.resnet34_8s_depth(depth)
+        
+        fuse = torch.cat((rgb_pre, depth_pre), dim=1)
+        pre = self.last_conv(fuse)
+        pre = self.last(pre)
+        pre = nn.functional.upsample_bilinear(input=pre, size=input_spatial_dim)
+        
+        return pre
+    
+    
 
 
 if __name__ == "__main__":
