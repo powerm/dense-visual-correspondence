@@ -22,20 +22,21 @@ train_config_file = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'confi
 train_config = utils.getDictFromYamlFilename(train_config_file)
 trans = True
 dataset = SpartanDataset(config=config, trans = trans)
-logging_dir = "trained_models/caterpillar_new"
+logging_dir = "trained_models/caterpillar_new_loss"
 num_iterations = 3500
 num_image_pairs = 100
 
 TRAIN = True
-EVALUATE = False
+EVALUATE = True
 EVALUATE_CROSS_SCENE = False
 
 
-descriptor_dim = [3, 6, 9]
-M_background_list = [0.5, 1.0]
-#network_list = [dict(model_class="Fuse", resnet_name="FuseNet"), dict(model_class="Resnet", resnet_name="Resnet34_8s")]
-
-network_list = [dict(model_class="ResFuse", resnet_name="Resnet34_8s_atten_fuse"),dict(model_class="ResFuse", resnet_name="Resnet34_8s_fuse")]
+descriptor_dim = [3]
+M_background_list = [0.5]
+network_list = [dict(model_class="Resnet", resnet_name="Resnet34_8s"), dict(model_class="ResFuse", resnet_name="Resnet34_8s_atten_fuse"), \
+    dict(model_class="Fuse", resnet_name="FuseNet"), dict(model_class="ResFuse", resnet_name="Resnet34_8s_fuse"),\
+        dict(model_class="ResFuse", resnet_name="Resnet34_8s_cat_fuse")]
+#network_list = [dict(model_class="Resnet", resnet_name="Resnet34_8s")]
 for  model  in network_list:
     for M_background in M_background_list:
         for d in descriptor_dim:
@@ -53,6 +54,7 @@ for  model  in network_list:
             train._config["dense_correspondence_network"]["descriptor_dimension"] = d
             train._config['dense_correspondence_network']['backbone'] = model
             train._config["loss_function"]["M_background"] = M_background
+            train._config['training']["loss_function"] = 'dense_correspondence_distribution_loss'
             if model['model_class'] == "Fuse" or model['model_class'] == "ResFuse":
                 dataset._trans = False
             else:

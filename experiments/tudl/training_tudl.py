@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 
-                               'dataset', 'composite', 'baymax_front_only.yaml')
+                               'dataset', 'composite', 'tudl.yaml')
 config = utils.getDictFromYamlFilename(config_filename)
 
 train_config_file = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 
@@ -22,8 +22,8 @@ train_config_file = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'confi
 train_config = utils.getDictFromYamlFilename(train_config_file)
 
 dataset = SpartanDataset(config=config)
-logging_dir = "trained_models/result/baymax"
-num_iterations = 3500
+logging_dir = "trained_models/result/singleobject/tudl"
+num_iterations = 6000
 num_image_pairs = 100
 
 TRAIN = True
@@ -31,8 +31,8 @@ EVALUATE = True
 EVALUATE_CROSS_SCENE = False
 
 
-descriptor_dim = [3, 6, 9]
-M_background_list = [0.5, 1.0, 1.5]
+descriptor_dim = [3]
+M_background_list = [0.5]
 network_list = [dict(model_class="Resnet", resnet_name="Resnet34_8s"), dict(model_class="ResFuse", resnet_name="Resnet34_8s_atten_fuse"), \
     dict(model_class="Fuse", resnet_name="FuseNet"), dict(model_class="ResFuse", resnet_name="Resnet34_8s_fuse"),\
         dict(model_class="ResFuse", resnet_name="Resnet34_8s_cat_fuse")]
@@ -53,6 +53,7 @@ for model in network_list:
             train._config["dense_correspondence_network"]["descriptor_dimension"] = d
             train._config['dense_correspondence_network']['backbone'] = model
             train._config["loss_function"]["M_background"] = M_background
+            #train._config['training']["loss_function"] = 'dense_correspondence_distribution_loss'
             if model['model_class'] == "Fuse" or model['model_class'] == "ResFuse":
                 dataset._trans = False
             else:

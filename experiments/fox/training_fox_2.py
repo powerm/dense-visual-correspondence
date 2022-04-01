@@ -20,33 +20,40 @@ train_config_file = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'confi
                                'training', 'training.yaml')
 
 train_config = utils.getDictFromYamlFilename(train_config_file)
-
-dataset = SpartanDataset(config=config)
-logging_dir = "trained_models/fox2"
+trans = True
+dataset = SpartanDataset(config=config, trans = trans)
+logging_dir = "trained_models/fox_new"
 num_iterations = 3500
 num_image_pairs = 100
 
 TRAIN = True
-EVALUATE = True
+EVALUATE = False
 EVALUATE_CROSS_SCENE = False
 
 
-descriptor_dim = [3]
+descriptor_dim = [3,6, 9]
 M_background_list = [1.0, 0.5]
+network_list = [dict(model_class="Fuse", resnet_name="FuseNet"), dict(model_class="Resnet", resnet_name="Resnet34_8s")]
 
-for M_background in M_background_list:
-    for d in descriptor_dim:
-        print("d:", d)
-        print("M_background:", M_background)
-        print("training descriptor of dimension %d" %(d))
-        train = DenseCorrespondenceTraining(dataset=dataset, config=train_config)
-        train_config = utils.getDictFromYamlFilename(train_config_file)
-        name = "fox_M_background_%.3f_%s" %(M_background, d)
-
-        train._config["training"]["logging_dir"] = logging_dir
-        train._config["training"]["logging_dir_name"] = name
-        train._config["dense_correspondence_network"]["descriptor_dimension"] = d
-        train._config["loss_function"]["M_background"] = M_background
+for  model  in network_list:
+    for M_background in M_background_list:
+        for d in descriptor_dim:
+            print("d:", d)
+            print("M_background:", M_background)
+            print("training descriptor of dimension %d" %(d))
+            print("network is " , model['resnet_name'])
+            
+            train = DenseCorrespondenceTraining(dataset=dataset, config=train_config)
+            #train_config = utils.getDictFromYamlFilename(train_config_file)
+            name = "fox_%s_M_background_%.3f_%s" %(model['resnet_name'],M_background, d)
+            
+            train._config["training"]["logging_dir"] = logging_dir
+            train._config["training"]["logging_dir_name"] = name
+            train._config["dense_correspondence_network"]["descriptor_dimension"] = d
+            train._config['dense_correspondence_network']['backbone'] = model
+            train._config["loss_function"]["M_background"] = M_background
+            if model['model_class'] == "Fuse":
+                dataset._trans = False
 
         if TRAIN:
             train.run()
