@@ -1,0 +1,19 @@
+
+-
+  config_file: star_bot_front_only.yaml
+  logging_dir: "trained_models/result/singleobject/start_bot"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+
+
+
+
+
+

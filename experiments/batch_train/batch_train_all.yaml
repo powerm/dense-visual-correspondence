@@ -1,0 +1,89 @@
+-
+  config_file: baymax_front_only.yaml
+  logging_dir: "trained_models/result/singleobject/baymax_front"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+- 
+  config_file: fox_only.yaml
+  logging_dir: "trained_models/result/singleobject/fox"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+-
+  config_file: hat_train_6.yaml
+  logging_dir: "trained_models/result/singleobject/hats"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+-
+  config_file: mugs_all.yaml
+  logging_dir: "trained_models/result/singleobject/mugs"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+-
+  config_file: shoe_train_4_shoes.yaml
+  logging_dir: "trained_models/result/singleobject/shoes"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+-
+  config_file: shoe_train_all_shoes.yaml
+  logging_dir: "trained_models/result/singleobject/all_shoes"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+-
+  config_file: star_bot_front_only.yaml
+  logging_dir: "trained_models/result/singleobject/start_bot"
+  descriptor_dim:
+    - 3
+    - 6
+    - 9
+  M_background_list:
+    - 0.5
+    - 1.0
+    - 2.0
+
+
+
+
+
+
+

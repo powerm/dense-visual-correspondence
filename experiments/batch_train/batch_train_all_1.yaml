@@ -1,0 +1,10 @@
+
+-
+  config_file: mugs_all.yaml
+  logging_dir: "trained_models/result/singleobject/mugs"
+  descriptor_dim:
+    - 3
+    - 6
+  M_background_list:
+    - 0.5
+    - 2.0
