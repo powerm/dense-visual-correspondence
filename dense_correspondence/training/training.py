@@ -40,6 +40,7 @@ from dense_correspondence.dataset.spartan_dataset_masked import SpartanDataset, 
 from dense_correspondence.network.dense_correspondence_network import DenseCorrespondenceNetwork
 
 from dense_correspondence.loss_functions.pixelwise_contrastive_loss import PixelwiseContrastiveLoss
+from dense_correspondence.loss_functions.dense_correspondence_distribution_loss import  DenseCorresDistriLoss
 import dense_correspondence.loss_functions.loss_composer as loss_composer
 from dense_correspondence.evaluation.evaluation import DenseCorrespondenceEvaluation
 
@@ -260,8 +261,11 @@ class DenseCorrespondenceTraining(object):
         optimizer = self._optimizer
         batch_size = self._data_loader.batch_size
 
-        pixelwise_contrastive_loss = PixelwiseContrastiveLoss(image_shape=dcn.image_shape, config=self._config['loss_function'])
-        pixelwise_contrastive_loss.debug = True
+        if  self._config['training']['loss_function'] == 'pixelwise_contrastive_loss':
+            pixelwise_contrastive_loss = PixelwiseContrastiveLoss(image_shape=dcn.image_shape, config=self._config['loss_function'])
+            pixelwise_contrastive_loss.debug = True
+        if self._config['training']['loss_function']  == 'dense_correspondence_distribution_loss':
+            pixelwise_contrastive_loss = DenseCorresDistriLoss(image_shape=dcn.image_shape, config=self._config['loss_function'])
 
         loss = match_loss = non_match_loss = 0
 
@@ -458,6 +462,8 @@ class DenseCorrespondenceTraining(object):
                     logging.info("Finished testing after %d iterations" % (max_num_iterations))
                     self.save_network(dcn, optimizer, loss_current_iteration, logging_dict=self._logging_dict)
                     return
+                
+                del loss
 
 
     def setup_logging_dir(self):

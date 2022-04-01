@@ -1,5 +1,6 @@
 from dense_correspondence.dataset.spartan_dataset_masked import SpartanDataset, SpartanDatasetDataType
 from dense_correspondence.loss_functions.pixelwise_contrastive_loss import PixelwiseContrastiveLoss
+from dense_correspondence.loss_functions.dense_correspondence_distribution_loss import DenseCorresDistriLoss
 
 import torch
 from torch.autograd import Variable
@@ -26,42 +27,56 @@ def get_loss(pixelwise_contrastive_loss, match_type,
     if (match_type == SpartanDatasetDataType.SINGLE_OBJECT_WITHIN_SCENE).all():
         if verbose:
             print("applying SINGLE_OBJECT_WITHIN_SCENE loss")
-        return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
-                                            matches_a,    matches_b,
-                                            masked_non_matches_a, masked_non_matches_b,
-                                            background_non_matches_a, background_non_matches_b,
-                                            blind_non_matches_a, blind_non_matches_b)
+        if   isinstance(pixelwise_contrastive_loss, PixelwiseContrastiveLoss):
+            return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
+                                                matches_a,    matches_b,
+                                                masked_non_matches_a, masked_non_matches_b,
+                                                background_non_matches_a, background_non_matches_b,
+                                                blind_non_matches_a, blind_non_matches_b)
+        elif isinstance(pixelwise_contrastive_loss, DenseCorresDistriLoss):
+            return  pixelwise_contrastive_loss.correspondence_distribution_loss(image_a_pred,image_b_pred,
+                                                                                matches_a,matches_b)
 
     if (match_type == SpartanDatasetDataType.SINGLE_OBJECT_ACROSS_SCENE).all():
         if verbose:
             print("applying SINGLE_OBJECT_ACROSS_SCENE loss")
-        return get_same_object_across_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
-                                            blind_non_matches_a, blind_non_matches_b)
+        if   isinstance(pixelwise_contrastive_loss, PixelwiseContrastiveLoss):
+            return get_same_object_across_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
+                                                blind_non_matches_a, blind_non_matches_b)
 
     if (match_type == SpartanDatasetDataType.DIFFERENT_OBJECT).all():
         if verbose:
             print("applying DIFFERENT_OBJECT loss")
-        return get_different_object_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
-                                            blind_non_matches_a, blind_non_matches_b)
+        if   isinstance(pixelwise_contrastive_loss, PixelwiseContrastiveLoss):
+            return get_different_object_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
+                                                blind_non_matches_a, blind_non_matches_b)
 
 
     if (match_type == SpartanDatasetDataType.MULTI_OBJECT).all():
         if verbose:
             print("applying MULTI_OBJECT loss")
-        return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
-                                            matches_a,    matches_b,
-                                            masked_non_matches_a, masked_non_matches_b,
-                                            background_non_matches_a, background_non_matches_b,
-                                            blind_non_matches_a, blind_non_matches_b)
+        if   isinstance(pixelwise_contrastive_loss, PixelwiseContrastiveLoss):
+            return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
+                                                matches_a,    matches_b,
+                                                masked_non_matches_a, masked_non_matches_b,
+                                                background_non_matches_a, background_non_matches_b,
+                                                blind_non_matches_a, blind_non_matches_b)
+        elif isinstance(pixelwise_contrastive_loss, DenseCorresDistriLoss):
+            return  pixelwise_contrastive_loss.correspondence_distribution_loss(image_a_pred,image_b_pred,
+                                                                                matches_a,matches_b)
 
     if (match_type == SpartanDatasetDataType.SYNTHETIC_MULTI_OBJECT).all():
         if verbose:
             print("applying SYNTHETIC_MULTI_OBJECT loss")
-        return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
-                                            matches_a,    matches_b,
-                                            masked_non_matches_a, masked_non_matches_b,
-                                            background_non_matches_a, background_non_matches_b,
-                                            blind_non_matches_a, blind_non_matches_b)
+        if   isinstance(pixelwise_contrastive_loss, PixelwiseContrastiveLoss):
+            return get_within_scene_loss(pixelwise_contrastive_loss, image_a_pred, image_b_pred,
+                                                matches_a,    matches_b,
+                                                masked_non_matches_a, masked_non_matches_b,
+                                                background_non_matches_a, background_non_matches_b,
+                                                blind_non_matches_a, blind_non_matches_b)
+        elif isinstance(pixelwise_contrastive_loss, DenseCorresDistriLoss):
+            return  pixelwise_contrastive_loss.correspondence_distribution_loss(image_a_pred,image_b_pred,
+                                                                                matches_a,matches_b)
 
     else:
         raise ValueError("Should only have above scenes?")
