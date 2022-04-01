@@ -725,6 +725,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             [image_a_rgb, image_a_depth,image_a_mask], uv_a = correspondence_augmentation.random_image_and_indices_mutation([image_a_rgb, image_a_depth,image_a_mask], uv_a)
             [image_b_rgb, image_b_depth,image_b_mask], uv_b = correspondence_augmentation.random_image_and_indices_mutation(
                 [image_b_rgb, image_b_depth,image_b_mask], uv_b)
+            
 
         image_a_depth_numpy = np.asarray(image_a_depth)
         image_b_depth_numpy = np.asarray(image_b_depth)
@@ -766,6 +767,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         else:
             image_a_rgb = transforms.ToTensor()(image_a_rgb)
             image_b_rgb = transforms.ToTensor()(image_b_rgb)
+
         image_a_depth_tensor = self.depth_image_to_tensor(image_a_depth_numpy)
         image_b_depth_tensor = self.depth_image_to_tensor(image_b_depth_numpy)
 
