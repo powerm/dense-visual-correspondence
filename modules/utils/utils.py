@@ -169,6 +169,29 @@ def homogenous_transform_from_dict(d):
 
     return transform_matrix
 
+def poseFromMat(mat):
+    '''
+    Returns position, quaternion
+    '''
+    return np.array(mat[:3,3]), transformations.quaternion_from_matrix(mat, isprecise=True)
+
+def dictFromMat(mat):
+    pos, quat = poseFromMat(mat)
+    pos = pos.tolist()
+    quat = quat.tolist()
+    d = dict()
+    d['translation'] = dict()
+    d['translation']['x'] = pos[0]
+    d['translation']['y'] = pos[1]
+    d['translation']['z'] = pos[2]
+
+    d['quaternion'] = dict()
+    d['quaternion']['w'] = quat[0]
+    d['quaternion']['x'] = quat[1]
+    d['quaternion']['y'] = quat[2]
+    d['quaternion']['z'] = quat[3]
+
+    return d
 
 def convert_to_absolute_path(path):
     """
@@ -247,23 +270,23 @@ def compute_distance_between_poses(pose_a, pose_b):
 
     return np.linalg.norm(pos_a - pos_b)
 
-def compute_angle_between_quaternions(q, r):
-    """
-    Computes the angle between two quaternions.
+# def compute_angle_between_quaternions(q, r):
+#     """
+#     Computes the angle between two quaternions.
 
-    theta = arccos(2 * <q1, q2>^2 - 1)
+#     theta = arccos(2 * <q1, q2>^2 - 1)
 
-    See https://math.stackexchange.com/questions/90081/quaternion-distance
-    :param q: numpy array in form [w,x,y,z]. As long as both q,r are consistent it doesn't matter
-    :type q:
-    :param r:
-    :type r:
-    :return: angle between the quaternions, in radians
-    :rtype:
-    """
+#     See https://math.stackexchange.com/questions/90081/quaternion-distance
+#     :param q: numpy array in form [w,x,y,z]. As long as both q,r are consistent it doesn't matter
+#     :type q:
+#     :param r:
+#     :type r:
+#     :return: angle between the quaternions, in radians
+#     :rtype:
+#     """
 
-    theta = 2*np.arccos(2 * np.dot(q,r)**2 - 1)
-    return theta
+#     theta = 2*np.arccos(2 * np.dot(q,r)**2 - 1)
+#     return theta
 
 def compute_angle_between_poses(pose_a, pose_b):
     """
