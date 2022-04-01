@@ -8,8 +8,11 @@ different_objects: False
 multiple_object: False # sample from multi object scenes
 kernel_variance: 0.25
 networks:
-- "fox_FuseNet_M_background_0.500_3"
-- "fox_Resnet34_8s_M_background_0.500_3"
+# - "caterpillar_Resnet34_8s_atten_fuse_M_background_0.500_3_no_flip_new"
+# - "caterpillar_Resnet34_8s_fuse_M_background_0.500_3_no_flip_new"
+ - "caterpillar_Resnet34_8s_M_background_0.500_3"
+# - "caterpillar_Resnet34_8s_cat_fuse_M_background_0.500_3_no_flip_new"
+
 
 norm_diff_threshold_dict:
   hats_consistent_M_background_0.500_3:

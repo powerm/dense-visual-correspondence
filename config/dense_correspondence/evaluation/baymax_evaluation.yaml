@@ -1,0 +1,19 @@
+params:
+  num_image_pairs: 25
+  num_matches_per_image_pair: 100
+
+networks:
+  0.5_3_no:
+    path_to_network_params: trained_models/result/singleobject/baymax_front/caterpillar_Resnet34_8s_M_background_0.500_3/004001.pth
+  0.5_3_fuse_add:
+    path_to_network_params: trained_models/result/singleobject/baymax_front/caterpillar_Resnet34_8s_fuse_M_background_0.500_6/004001.pth
+  0.5_3_fuse_cat:
+    path_to_network_params: trained_models/result/singleobject/baymax_front/caterpillar_Resnet34_8s_cat_fuse_M_background_0.500_3/004001.pth
+  0.5_3_fuse_atten:
+    path_to_network_params: trained_models/result/singleobject/baymax_front/caterpillar_Resnet34_8s_atten_fuse_M_background_0.500_6/004001.pth
+  0.5_3_FuseNet:
+    path_to_network_params: trained_models/result/singleobject/baymax_front/caterpillar_FuseNet_M_background_0.500_3/004002.pth
+
+dataset: [] # which dataset to use, not used for now
+
+output_dir: analysis

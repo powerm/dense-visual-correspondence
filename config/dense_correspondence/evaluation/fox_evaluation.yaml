@@ -3,8 +3,11 @@ params:
   num_matches_per_image_pair: 100
 
 networks:
-  fox_M_background_0.500_3:
-    path_to_network_params: trained_models/fox2/fox_M_background_0.500_3/003501.pth
+  fox_FuseNet_M_background_0.500_3:
+    path_to_network_params: trained_models/fox_new/fox_FuseNet_M_background_0.500_3/003501.pth
+  fox_Resnet34_8s_M_background_0.500_3:
+    path_to_network_params: trained_models/fox_new/fox_Resnet34_8s_M_background_0.500_3/003501.pth
+  
 
 dataset: [] # which dataset to use, not used for now
 

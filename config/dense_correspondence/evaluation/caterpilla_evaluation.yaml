@@ -1,0 +1,17 @@
+params:
+  num_image_pairs: 25
+  num_matches_per_image_pair: 100
+
+networks:
+  # caterpillar_Resnet34_8s_atten_fuse_M_background_0.500_3_no_flip_new:
+  #   path_to_network_params: trained_models/caterpillar_new/caterpillar_Resnet34_8s_atten_fuse_M_background_0.500_3_no_flip_new/004001.pth
+  # caterpillar_Resnet34_8s_fuse_M_background_0.500_3_no_flip_new:
+  #   path_to_network_params: trained_models/caterpillar_new/caterpillar_Resnet34_8s_fuse_M_background_0.500_6_no_flip_new/004001.pth
+  caterpillar_Resnet34_8s_M_background_0.500_3:
+    path_to_network_params: trained_models/caterpillar_new_loss/caterpillar_Resnet34_8s_M_background_0.500_3_no_flip_new/002000.pth
+  # caterpillar_Resnet34_8s_cat_fuse_M_background_0.500_3_no_flip_new:
+  #   path_to_network_params: trained_models/caterpillar_new/caterpillar_Resnet34_8s_cat_fuse_M_background_0.500_3_no_flip_new/004001.pth
+
+dataset: [] # which dataset to use, not used for now
+
+output_dir: analysis

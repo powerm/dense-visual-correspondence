@@ -1,0 +1,7 @@
+logs_root_path: logs_proto
+object_id: "dragen"
+train: 
+  - "tudl" # pointing towards robot
+test:
+  - "tudl" # pointing towards robot
+evaluation_labeled_data_path: []
