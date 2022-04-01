@@ -8,7 +8,7 @@ import logging
 import torch
 import torch.nn as nn
 from PIL import Image
-
+import torch.nn.functional as F 
 
 
 import  modules.utils.utils as utils
@@ -535,6 +535,44 @@ class DenseCorrespondenceNetwork(nn.Module):
         dcn.model_folder = model_folder
         return dcn
 
+    
+    @staticmethod
+    def find_batch_best_matches(res_a, res_b, matches_a, debug = False):
+        
+        H =  res_a.shape[0]
+        W = res_a.shape[1]
+        d =  res_a.shape[2]
+        with torch.no_grad():
+            num_matches = matches_a.size()[0]
+            matches_a = matches_a.to(device=torch.device("cuda"))
+            # reshape res_a  from (H,W,  d) to  (1, H*W, d)
+            res_a = res_a.reshape(H*W,  d)
+            # matches_a_descriptors shape (1, num_matches, d)
+            matches_a_descriptors = torch.index_select(res_a, 0, matches_a)
+            if  len(matches_a) == 1:
+                matches_a_descriptors = matches_a_descriptors.unsqueeze(0)
+
+            # reshape the res_b  from [H, W, d] to [1, w*h, d]
+            res_b = res_b.reshape(H*W, d).unsqueeze(0)
+            # expand the res_b from [1, w*h, d] to [num_matches, w*h, d]
+            image_b_pred_expand =  res_b.expand(num_matches, res_b.shape[1], d)
+
+            matches_a_descriptors_expand = matches_a_descriptors.unsqueeze(1)
+            
+            # cal   || D(I_a,u_a, I_b, u_b)||_2^2d
+            norm_diffs_b = torch.sqrt(torch.sum(torch.square(image_b_pred_expand- matches_a_descriptors_expand),2))
+            # cal the  distribution respondence using softmax  exp(-D())/sum_(exp(-D()))
+            heatmap_b =  F.softmax(-norm_diffs_b, 1)
+            best_match_flattened_idx=torch.argmax(heatmap_b, dim = 1)
+            matches_b_pre = best_match_flattened_idx
+            idx = torch.range(0, len(matches_b_pre)-1).long().to(device=torch.device("cuda"))
+            
+            best_match_diff= norm_diffs_b[(idx, best_match_flattened_idx) ]
+            best_match_heatmap = heatmap_b[(idx, best_match_flattened_idx)]
+
+            return matches_b_pre,  best_match_diff, best_match_heatmap
+
+    
     @staticmethod
     def find_best_match(pixel_a, res_a, res_b, debug=False):
         """
