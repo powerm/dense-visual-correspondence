@@ -30,7 +30,7 @@ COLOR_RED = (0, 0, 255)
 COLOR_GREEN = (0,255,0)
 
 utils.set_default_cuda_visible_devices()
-eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', 'cater.yaml')
+eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', 'evaluation.yaml')
 EVAL_CONFIG = utils.getDictFromYamlFilename(eval_config_filename)
 
 
@@ -198,8 +198,8 @@ class HeatmapVisualization(object):
         # scene_name_1 = "2018-05-15-22-01-44"
         # scene_name_2 = "2018-05-15-22-04-17"
 
-        self.img1_pil = self._dataset.get_rgb_image_from_scene_name_and_idx(scene_name_1, image_1_idx)
-        self.img2_pil = self._dataset.get_rgb_image_from_scene_name_and_idx(scene_name_2, image_2_idx)
+        self.img1_pil, self.img1_depth, _, _  = self._dataset.get_rgbd_mask_pose(scene_name_1, image_1_idx)
+        self.img2_pil, self.img2_depth, _ ,_  = self._dataset.get_rgbd_mask_pose(scene_name_2, image_2_idx)
 
         self._scene_name_1 = scene_name_1
         self._scene_name_2 = scene_name_2
@@ -220,8 +220,11 @@ class HeatmapVisualization(object):
         """
         self.img1 = pil_image_to_cv2(self.img1_pil)
         self.img2 = pil_image_to_cv2(self.img2_pil)
-        self.rgb_1_tensor = self._dataset.rgb_image_to_tensor(self.img1_pil)
-        self.rgb_2_tensor = self._dataset.rgb_image_to_tensor(self.img2_pil)
+        
+        
+        
+        #self.rgb_1_tensor = self._dataset.rgb_image_to_tensor(self.img1_pil)
+        #self.rgb_2_tensor = self._dataset.rgb_image_to_tensor(self.img2_pil)
         self.img1_gray = cv2.cvtColor(self.img1, cv2.COLOR_RGB2GRAY) / 255.0
         self.img2_gray = cv2.cvtColor(self.img2, cv2.COLOR_RGB2GRAY) / 255.0
 
@@ -231,8 +234,8 @@ class HeatmapVisualization(object):
         self._res_a = dict()
         self._res_b = dict()
         for network_name, dcn in iter(self._dcn_dict.items()):
-            self._res_a[network_name] = dcn.forward_single_image_tensor(self.rgb_1_tensor).data.cpu().numpy()
-            self._res_b[network_name] = dcn.forward_single_image_tensor(self.rgb_2_tensor).data.cpu().numpy()
+            self._res_a[network_name] = dcn.forward_single_image_tensor(self.img1_pil, self.img1_depth).data.cpu().numpy()
+            self._res_b[network_name] = dcn.forward_single_image_tensor(self.img2_pil, self.img2_depth).data.cpu().numpy()
 
 
         self.find_best_match(None, 0, 0, None, None)
